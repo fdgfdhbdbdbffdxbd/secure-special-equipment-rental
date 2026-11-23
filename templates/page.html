@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Аренда спецтехники</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}"></head>
+<body><header><strong>Аренда спецтехники</strong><nav><a href="/">Каталог</a>
+{% if user %}<span>{{ user.login }} · {{ user.role }}</span>
+{% if user.role == 'admin' %}<a href="/audit">Журнал</a>{% else %}<a href="/rentals">Заявки</a>{% endif %}
+<form action="/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>Выйти</button></form>{% endif %}</nav></header>
+<main>
+{% macro token() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+{% if machines is defined %}
+<h1>Каталог техники</h1><section class="grid">
+{% for m in machines %}<article><h2>{{ m.name }}</h2><p>{{ m.hourly }} ₽/ч · подача {{ m.dispatch }} ₽ · {{ m.per_km }} ₽/км</p>
+{% if user and user.role == 'client' %}
+<form action="/rentals" method="post">{{ token() }}<input type="hidden" name="machine" value="{{ m.id }}">
+<label>Дата <input name="day" type="date" required></label><label>Часы <input name="hours" type="number" min="1" max="72" required></label>
+<label>Путь в одну сторону, км <input name="km" type="number" min="0" max="500" step=".01" required></label>
+<label>Комментарий <input name="note" maxlength="300"></label><button>Создать заявку</button></form>
+{% endif %}</article>{% endfor %}</section>
+{% if not user %}<section class="grid">
+<article><h2>Вход</h2><form action="/login" method="post">{{ token() }}<label>Логин <input name="login" required></label><label>Пароль <input name="password" type="password" required></label><button>Войти</button></form></article>
+<article><h2>Регистрация</h2><form action="/register" method="post">{{ token() }}<label>Логин <input name="login" pattern="[A-Za-z0-9]{3,64}" required></label><label>Пароль <input name="password" minlength="12" maxlength="128" type="password" required></label><label>Телефон <input name="phone" maxlength="25"></label><button>Зарегистрироваться</button></form></article>
+</section>{% endif %}
+{% elif rentals is defined %}
+<h1>Заявки</h1><table><thead><tr><th>Дата</th><th>Техника</th><th>Статус</th><th>Итого, ₽</th></tr></thead><tbody>{% for r in rentals %}<tr><td><a href="{{ url_for('detail',rental_id=r.id) }}">{{ r.day }}</a></td><td>{{ 'Экскаватор' if r.machine_id == 1 else 'Автокран' }}</td><td>{{ r.status }}</td><td>{{ r.total }}</td></tr>{% else %}<tr><td colspan="4">Заявок пока нет</td></tr>{% endfor %}</tbody></table>
+{% if offset %}<a href="?offset={{ [offset-50,0]|max }}">Назад</a>{% endif %} {% if more %}<a href="?offset={{ offset+50 }}">Далее</a>{% endif %}
+{% elif rental is defined %}
+<h1>Карточка заявки</h1><article><p>Номер {{ rental.id }}</p><p>Дата {{ rental.day }} · {{ rental.hours }} ч · {{ rental.km }} км</p><p>Доставка {{ rental.delivery }} ₽ · итого {{ rental.total }} ₽</p><p>Статус {{ rental.status }}</p><p>{{ rental.note }}</p>
+{% if rental.status == 'new' or (rental.status == 'accepted' and user.role == 'staff') %}
+<form method="post">{{ token() }}
+{% if rental.status == 'new' %}{% if user.role == 'staff' %}<button name="status" value="accepted">Подтвердить</button>{% endif %}<button name="status" value="cancelled">Отменить</button>{% else %}<button name="status" value="closed">Закрыть</button>{% endif %}</form>
+{% endif %}
+{% if contract %}<p><a href="{{ url_for('document',rental_id=rental.id) }}">Скачать договор PDF</a></p>
+{% elif user.role == 'staff' and rental.status == 'accepted' %}<form method="post" enctype="multipart/form-data" action="{{ url_for('document',rental_id=rental.id) }}">{{ token() }}<label>Договор PDF до 5 МиБ <input name="pdf" type="file" accept=".pdf" required></label><button>Загрузить</button></form>{% endif %}</article>
+{% elif audit is defined %}
+<h1>Журнал событий</h1><table><thead><tr><th>Время</th><th>Действие</th><th>Субъект</th><th>Объект</th></tr></thead><tbody>{% for e in audit %}<tr><td>{{ e.at }}</td><td>{{ e.action }}</td><td>{{ e.actor or '—' }}</td><td>{{ e.target or '—' }}</td></tr>{% endfor %}</tbody></table>
+{% endif %}
+</main></body></html>

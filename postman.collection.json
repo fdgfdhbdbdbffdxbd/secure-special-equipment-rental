@@ -1,0 +1,220 @@
+{
+  "info": {
+    "name": "Аренда спецтехники — локальная проверка",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://127.0.0.1:5000"
+    },
+    {
+      "key": "login",
+      "value": ""
+    },
+    {
+      "key": "password",
+      "value": ""
+    },
+    {
+      "key": "rental_id",
+      "value": ""
+    },
+    {
+      "key": "day",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Каталог и CSRF",
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Каталог доступен', () => pm.response.to.have.status(200));",
+              "const match = pm.response.text().match(/name=\"csrf_token\" value=\"([^\"]+)\"/);",
+              "if (match) pm.collectionVariables.set('csrf', match[1]);"
+            ]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "Вход",
+      "request": {
+        "method": "POST",
+        "url": "{{base}}/login",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "login",
+              "value": "{{login}}"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}"
+            },
+            {
+              "key": "csrf_token",
+              "value": "{{csrf}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Вход выполнен', () => pm.response.to.have.status(302));"
+            ]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "Обновить CSRF после входа",
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Каталог доступен', () => pm.response.to.have.status(200));",
+              "const match = pm.response.text().match(/name=\"csrf_token\" value=\"([^\"]+)\"/);",
+              "if (match) pm.collectionVariables.set('csrf', match[1]);"
+            ]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "Создать заявку",
+      "request": {
+        "method": "POST",
+        "url": "{{base}}/rentals",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "machine",
+              "value": "1"
+            },
+            {
+              "key": "day",
+              "value": "{{day}}"
+            },
+            {
+              "key": "hours",
+              "value": "8"
+            },
+            {
+              "key": "km",
+              "value": "25"
+            },
+            {
+              "key": "csrf_token",
+              "value": "{{csrf}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Заявка создана', () => pm.response.to.have.status(302));"
+            ]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "Список заявок",
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/rentals"
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "Карточка заявки",
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/rentals/{{rental_id}}"
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "Скачать договор",
+      "request": {
+        "method": "GET",
+        "url": "{{base}}/rentals/{{rental_id}}/contract"
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "POST без CSRF",
+      "request": {
+        "method": "POST",
+        "url": "{{base}}/rentals",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "machine",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('CSRF заблокирован', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    }
+  ]
+}

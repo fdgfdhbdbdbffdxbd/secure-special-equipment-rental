@@ -1,0 +1,24 @@
+PASS S01 PostgreSQL contains 5000 seeded rentals
+PASS S02 guest gets 401
+PASS S03 register client
+PASS S03 register client
+PASS S04 injection payload rejected
+PASS S05 login and cookie attributes
+PASS S05 login and cookie attributes
+PASS S05 login and cookie attributes
+PASS S05 login and cookie attributes
+PASS S06 CSRF absent returns 400
+PASS S07 valid rental created
+PASS S08 delivery 8000 and quote 28000
+PASS S09 Argon2id and encrypted phone
+PASS S10 XSS payload escaped
+PASS S11 URL substitution returns 404
+PASS S12 client cannot read audit
+PASS S13 staff accepts order
+PASS S14 upload accepted
+PASS S15 cross-account download blocked
+PASS S16 owner download matches bytes
+PASS S17 ciphertext stored as bytea
+PASS S18 modified tag returns 503
+PASS S19 denial and tampering audited
+PASS S20 logout invalidates access

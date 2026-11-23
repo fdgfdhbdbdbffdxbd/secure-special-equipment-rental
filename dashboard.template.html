@@ -1,0 +1,33 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Аналитика аренды</title><style>
+body{background:#eff4f6;color:#102e42;font:17px system-ui;margin:28px auto;max-width:1080px;padding:0 16px}section{background:white;padding:20px;margin:15px 0;border-radius:12px}label{display:inline-block;margin-right:15px}input,select{font:inherit}svg{width:100%;height:auto}strong{font-size:22px}small{color:#436173}
+</style><h1>Аналитика заявок на аренду</h1><small>Синтетическая выборка · октябрь и ноябрь 2026</small>
+<section><label>С <input type="date" id="start" value="2026-10-01"></label><label>По <input type="date" id="end" value="2026-11-30"></label>
+<label>Техника <select id="kind"><option value="">Вся</option><option value="excavator">Экскаватор</option><option value="crane">Автокран</option></select></label>
+<label>Статус <select id="status"><option value="">Все</option><option value="new">Новая</option><option value="accepted">Подтверждена</option><option value="closed">Закрыта</option><option value="cancelled">Отменена</option></select></label></section>
+<section><strong id="metrics"></strong></section><section><h2>Заявки по дням</h2><svg id="chart" viewBox="0 0 960 220" role="img" aria-label="Динамика количества заявок"></svg></section>
+<script>
+const rows=__ROWS__;
+const byId=id=>document.getElementById(id);
+const fields=['start','end','kind','status'].map(byId);
+const ru=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2});
+function render(){
+ const [start,end,kind,status]=fields.map(field=>field.value);
+ const days=new Map();
+ let n=0,delivery=0,total=0;
+ for(const [day,k,s,orders,l,c] of rows){
+   if((start&&day<start)||(end&&day>end))continue;
+   if(!days.has(day))days.set(day,0);
+   if((kind&&k!==kind)||(status&&s!==status))continue;
+   days.set(day,days.get(day)+orders);
+   n+=orders;delivery+=l;total+=c;
+ }
+ byId('metrics').textContent='Заявки '+ru.format(n)+' · Доставка '+ru.format(delivery)+' ₽ · Расчёт '+ru.format(total)+' ₽';
+ const values=[...days], max=Math.max(1,...days.values());
+ const step=900/Math.max(1,values.length);
+ byId('chart').innerHTML='<path d="M40 15V180H940" fill="none" stroke="#8499a6"/><text x="3" y="25" font-size="14">'+max+'</text>'+values.map(([day,count],i)=>{
+  const h=155*count/max;
+  return '<rect x="'+(40+i*step)+'" y="'+(180-h)+'" width="'+Math.max(1,step-2)+'" height="'+h+'" fill="#007e82"><title>'+day+': '+count+'</title></rect>';
+ }).join('')+(values.length?'<text x="40" y="206">'+values[0][0]+'</text><text x="940" y="206" text-anchor="end">'+values.at(-1)[0]+'</text>':'<text x="50" y="110">В выбранном диапазоне нет дат</text>');
+}
+fields.forEach(field=>field.addEventListener('change',render));render();
+</script></html>
